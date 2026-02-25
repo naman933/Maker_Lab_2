@@ -1,4 +1,7 @@
 {
+  "installCommand": "yarn install",
+  "buildCommand": "yarn build",
+  "outputDirectory": "build",
   "rewrites": [
     { "source": "/api/ai/analyze", "destination": "/api/ai/analyze" },
     { "source": "/((?!api).*)", "destination": "/index.html" }
