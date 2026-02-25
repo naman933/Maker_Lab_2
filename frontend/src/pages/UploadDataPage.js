@@ -244,6 +244,32 @@ export default function UploadDataPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Clear data confirmation */}
+      <AlertDialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
+        <AlertDialogContent data-testid="clear-data-confirm-dialog">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {clearType === 'all' ? 'Clear All Data?' : 'Clear Uploaded Queries?'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {clearType === 'all'
+                ? 'This will permanently delete all queries, upload history, and cycles. You will need to recreate your admission cycles and re-upload data.'
+                : 'This will permanently delete all queries and upload history. Your cycles and user data will be preserved. You can re-upload your data afterward.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="clear-data-cancel-btn">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleClear}
+              className="bg-red-600 hover:bg-red-700 text-white"
+              data-testid="clear-data-confirm-btn"
+            >
+              {clearType === 'all' ? 'Clear Everything' : 'Clear Queries'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
