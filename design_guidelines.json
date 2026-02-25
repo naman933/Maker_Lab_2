@@ -1,0 +1,162 @@
+{
+  "project_name": "Admissions Query Intelligence System (AQIS)",
+  "design_philosophy": {
+    "theme_name": "Intelligent Clarity",
+    "core_concept": "Admissions is chaotic; AQIS is the antidote. The design prioritizes reduced cognitive load, data density without clutter, and clear hierarchy. It feels like a 'Command Center'—calm, authoritative, and predictive.",
+    "emotional_tone": "Trustworthy, Organized, Intelligent, Alert",
+    "persona_alignment": "E1 Anti-AI Designer",
+    "visual_style": "Enterprise Clean",
+    "key_principles": [
+      "Density with Breathing Room: Use high-density grids for data, but ample padding inside containers.",
+      "Color as Logic: Color is used strictly for status and action. Decoration is minimal.",
+      "The 'Inter' Polish: Since Inter is mandated, we use 'tracking-tight' on headings and 'tracking-wide' on uppercase labels to avoid the default look.",
+      "AI Visibility: AI features get special visual treatment (subtle gradients/borders) to distinguish 'Machine' from 'Human' data."
+    ]
+  },
+  "typography": {
+    "font_family": {
+      "headings": "Inter, sans-serif",
+      "body": "Inter, sans-serif",
+      "code": "JetBrains Mono, monospace"
+    },
+    "scale": {
+      "h1": "text-3xl font-semibold tracking-tight lg:text-4xl",
+      "h2": "text-2xl font-semibold tracking-tight",
+      "h3": "text-xl font-semibold tracking-tight",
+      "body": "text-sm leading-relaxed",
+      "small": "text-xs font-medium text-muted-foreground",
+      "label": "text-[11px] uppercase tracking-wider font-bold text-muted-foreground"
+    },
+    "rules": [
+      "Never use default letter-spacing for Headings; always use 'tracking-tight'.",
+      "Labels and overlines must be Uppercase + Tiny + Wide Spacing.",
+      "Use 'text-balance' for multi-line headings."
+    ]
+  },
+  "colors": {
+    "palette": {
+      "primary": "#3B82F6",
+      "primary_foreground": "#FFFFFF",
+      "sidebar_bg": "#1E2A4A",
+      "sidebar_fg": "#F8FAFC",
+      "background_light": "#F8FAFC",
+      "background_dark": "#020617",
+      "card_light": "#FFFFFF",
+      "card_dark": "#0F172A",
+      "border_light": "#E2E8F0",
+      "border_dark": "#1E293B",
+      "status": {
+        "high": { "bg": "#FEF2F2", "text": "#B91C1C", "border": "#FECACA" },
+        "medium": { "bg": "#FFFBEB", "text": "#B45309", "border": "#FDE68A" },
+        "low": { "bg": "#F0FDF4", "text": "#15803D", "border": "#BBF7D0" }
+      }
+    },
+    "usage_rules": [
+      "Sidebar must be Navy (#1E2A4A) in Light Mode. In Dark Mode, it can shift to Deep Slate (#0F172A).",
+      "Main Content background is OFF-WHITE (#F8FAFC), not pure white.",
+      "Cards are Pure White with subtle borders.",
+      "Do not use gradients for backgrounds unless it is an 'AI Analysis' card."
+    ]
+  },
+  "layout": {
+    "structure": "Sidebar Navigation (Fixed Left) + Top Header + Main Content Area",
+    "grid_system": {
+      "dashboard": "grid grid-cols-1 md:grid-cols-12 gap-6",
+      "widgets": "col-span-12 md:col-span-6 lg:col-span-4",
+      "detail_drawer": "Fixed right slide-over (Sheet component)"
+    },
+    "spacing": {
+      "container_padding": "p-6 md:p-8",
+      "card_padding": "p-6",
+      "gap": "gap-6"
+    },
+    "z_index": {
+      "sidebar": "z-40",
+      "header": "z-30",
+      "modal": "z-50",
+      "toast": "z-60"
+    }
+  },
+  "components": {
+    "buttons": {
+      "style": "h-9 px-4 rounded-md font-medium transition-all active:scale-95",
+      "primary": "bg-blue-500 hover:bg-blue-600 text-white shadow-sm",
+      "secondary": "bg-white border border-slate-200 hover:bg-slate-50 text-slate-900",
+      "ghost": "hover:bg-slate-100 text-slate-700"
+    },
+    "cards": {
+      "style": "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-[0_1px_3px_rgba(0,0,0,0.05)]",
+      "ai_card": "bg-gradient-to-br from-white to-blue-50/50 border border-blue-100 dark:from-slate-900 dark:to-blue-950/30 dark:border-blue-900"
+    },
+    "inputs": {
+      "style": "h-9 rounded-md border-slate-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+    },
+    "badges": {
+      "style": "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+      "high": "bg-red-50 text-red-700 border border-red-200",
+      "medium": "bg-amber-50 text-amber-700 border border-amber-200",
+      "low": "bg-green-50 text-green-700 border border-green-200"
+    },
+    "tables": {
+      "style": "w-full caption-bottom text-sm",
+      "header": "h-10 px-4 text-left align-middle font-medium text-muted-foreground bg-slate-50/50",
+      "row": "border-b transition-colors hover:bg-slate-50/50 data-[state=selected]:bg-slate-100"
+    }
+  },
+  "visual_assets": {
+    "images": {
+      "login_bg": {
+        "url": "https://images.unsplash.com/photo-1758413148947-fa1c2595525c",
+        "alt": "Modern University Architecture",
+        "usage": "Login page right split-screen background. Overlay with blue-900 at 50% opacity."
+      },
+      "avatars": [
+        {
+          "url": "https://images.pexels.com/photos/33871730/pexels-photo-33871730.jpeg",
+          "alt": "Admin User Avatar"
+        },
+        {
+          "url": "https://images.unsplash.com/photo-1659353221237-6a1cfb73fd90",
+          "alt": "AdCom User Avatar"
+        }
+      ]
+    },
+    "icons": {
+      "library": "lucide-react",
+      "style": "Stroke width 1.5px or 2px. Size 16px-20px."
+    }
+  },
+  "motion": {
+    "transitions": "transition-all duration-200 ease-out",
+    "hover_lift": "hover:-translate-y-1 hover:shadow-md",
+    "drawer_slide": "animate-in slide-in-from-right duration-300"
+  },
+  "accessibility": {
+    "contrast": "Ensure 4.5:1 for normal text. Use 'text-slate-600' or darker on white backgrounds.",
+    "focus": "Visible ring-2 ring-blue-500 ring-offset-2 on all interactive elements.",
+    "aria": "All icon-only buttons must have aria-label."
+  },
+  "libraries": {
+    "charts": "recharts",
+    "dates": "date-fns",
+    "tables": "@tanstack/react-table",
+    "excel": "xlsx",
+    "ui": "shadcn/ui"
+  },
+  "universal_guidelines": [
+    "Do not use gradients for backgrounds unless specified.",
+    "Do not use generic centered layouts. Use grid layouts.",
+    "Use 'sonner' for toasts.",
+    "All interactive elements MUST include data-testid attribute.",
+    "Do not use 'transition: all'. Specify properties.",
+    "Customize scrollbars to be thin and match the theme."
+  ],
+  "instructions_to_main_agent": [
+    "Start by setting up the 'Layout' component with the Sidebar and Header.",
+    "Implement the 'ThemeContext' or use 'next-themes' logic for the dark/light toggle immediately.",
+    "Mock the backend using 'localStorage'. Create a 'services/mockApi.js' file to handle CRUD operations.",
+    "Use 'Recharts' for the Analytics dashboard. Create a dedicated 'components/charts' folder.",
+    "Ensure the Excel upload parses data client-side using 'xlsx' and populates the query list.",
+    "The 'AI Analysis' card in the drawer should be static mock data for now, but styled to look generated."
+  ]
+}
