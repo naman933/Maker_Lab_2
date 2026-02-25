@@ -14,11 +14,13 @@ import * as XLSX from 'xlsx';
 
 export default function UploadDataPage() {
   const { user } = useAuth();
-  const { activeCycle, importQueries, uploads } = useData();
+  const { activeCycle, importQueries, uploads, queries, clearUploadedData, clearAllData } = useData();
   const fileRef = useRef(null);
   const [dragOver, setDragOver] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [lastUpload, setLastUpload] = useState(null);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [clearType, setClearType] = useState('queries'); // 'queries' or 'all'
 
   const latestUpload = uploads.length > 0 ? uploads[uploads.length - 1] : null;
 
