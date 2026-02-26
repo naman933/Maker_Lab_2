@@ -57,14 +57,12 @@ export default function Layout() {
   const renderSidebar = () => (
     <div className="flex flex-col h-full" data-testid="sidebar">
       {/* Logo */}
-      <div className="px-5 py-5 border-b border-white/10">
+      <div className="px-5 py-4 border-b border-white/10">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center">
-            <ShieldCheck className="w-4.5 h-4.5 text-white" />
-          </div>
-          <div>
+          <img src="/spjimr-logo.png" alt="SPJIMR" className="h-9 w-auto object-contain brightness-0 invert opacity-90" data-testid="sidebar-spjimr-logo" />
+          <div className="border-l border-white/20 pl-2.5">
             <h1 className="text-sm font-bold text-white tracking-tight">AQIS</h1>
-            <p className="text-[10px] uppercase tracking-wider text-slate-400">Admissions Intel</p>
+            <p className="text-[9px] uppercase tracking-wider text-slate-400">Admissions Intel</p>
           </div>
         </div>
       </div>
@@ -192,9 +190,10 @@ export default function Layout() {
           </button>
 
           <div className="flex-1 flex items-center justify-between">
-            <h2 className="text-sm font-semibold tracking-tight text-foreground hidden sm:block">
-              Admissions Query Intelligence
-            </h2>
+            <div className="flex items-center gap-2.5">
+              <img src="/spjimr-logo.png" alt="SPJIMR" className="h-8 w-auto object-contain hidden sm:block" data-testid="header-spjimr-logo" />
+              <span className="text-sm font-semibold tracking-tight text-foreground hidden sm:block">AQIS</span>
+            </div>
 
             <div className="flex items-center gap-3">
               {activeCycle && (

@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ShieldCheck, Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -36,17 +36,11 @@ export default function LoginPage() {
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-sm space-y-8">
           <div className="space-y-2">
-            <div className="flex items-center gap-2.5 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center">
-                <ShieldCheck className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-lg font-bold tracking-tight">AQIS</h1>
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Admissions Query Intelligence</p>
-              </div>
+            <div className="flex items-center gap-3 mb-6">
+              <img src="/spjimr-logo.png" alt="SPJIMR" className="h-12 w-auto object-contain" data-testid="login-spjimr-logo" />
             </div>
             <h2 className="text-2xl font-semibold tracking-tight">Welcome back</h2>
-            <p className="text-sm text-muted-foreground">Sign in to your account to continue</p>
+            <p className="text-sm text-muted-foreground">Sign in to AQIS - Admissions Query Intelligence System</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4" data-testid="login-form">
@@ -116,9 +110,7 @@ export default function LoginPage() {
       >
         <div className="absolute inset-0 bg-gradient-to-br from-blue-900/50 to-slate-900/80" />
         <div className="relative z-10 text-center space-y-4 px-12">
-          <div className="w-16 h-16 rounded-2xl bg-blue-500/20 flex items-center justify-center mx-auto mb-6">
-            <ShieldCheck className="w-8 h-8 text-blue-400" />
-          </div>
+          <img src="/spjimr-logo.png" alt="SPJIMR" className="h-20 w-auto object-contain mx-auto mb-6 brightness-0 invert opacity-90" />
           <h2 className="text-3xl font-bold text-white tracking-tight">Admissions Query<br/>Intelligence System</h2>
           <p className="text-sm text-blue-200/70 max-w-md">
             Streamline admissions query management with AI-powered analysis, automated prioritization, and real-time SLA monitoring.
