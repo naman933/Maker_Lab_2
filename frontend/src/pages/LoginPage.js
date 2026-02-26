@@ -110,7 +110,7 @@ export default function LoginPage() {
       >
         <div className="absolute inset-0 bg-gradient-to-br from-blue-900/50 to-slate-900/80" />
         <div className="relative z-10 text-center space-y-4 px-12">
-          <img src="/spjimr-logo.png" alt="SPJIMR" className="h-20 w-auto object-contain mx-auto mb-6 brightness-0 invert opacity-90" />
+          <img src="/spjimr-logo.png" alt="SPJIMR" className="h-20 w-auto object-contain mx-auto mb-6 drop-shadow-lg" />
           <h2 className="text-3xl font-bold text-white tracking-tight">Admissions Query<br/>Intelligence System</h2>
           <p className="text-sm text-blue-200/70 max-w-md">
             Streamline admissions query management with AI-powered analysis, automated prioritization, and real-time SLA monitoring.

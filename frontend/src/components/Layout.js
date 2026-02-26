@@ -59,7 +59,7 @@ export default function Layout() {
       {/* Logo */}
       <div className="px-5 py-4 border-b border-white/10">
         <div className="flex items-center gap-2.5">
-          <img src="/spjimr-logo.png" alt="SPJIMR" className="h-9 w-auto object-contain brightness-0 invert opacity-90" data-testid="sidebar-spjimr-logo" />
+          <img src="/spjimr-logo.png" alt="SPJIMR" className="h-9 w-auto object-contain" data-testid="sidebar-spjimr-logo" />
           <div className="border-l border-white/20 pl-2.5">
             <h1 className="text-sm font-bold text-white tracking-tight">AQIS</h1>
             <p className="text-[9px] uppercase tracking-wider text-slate-400">Admissions Intel</p>
