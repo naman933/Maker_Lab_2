@@ -119,12 +119,28 @@ export default function UploadDataPage() {
     setShowClearConfirm(false);
   };
 
+  const handleCreateCycle = () => {
+    if (!newCycle.name || !newCycle.startDate || !newCycle.endDate) {
+      toast.error('Please fill all cycle fields');
+      return;
+    }
+    addCycle(newCycle);
+    toast.success('Cycle created successfully');
+    setShowCreateCycle(false);
+    setNewCycle({ name: '', startDate: '', endDate: '' });
+  };
+
+  const handleSetActiveCycle = (id) => {
+    setActiveCycle(id);
+    toast.success('Active cycle updated');
+  };
+
   return (
     <div className="space-y-6 animate-fade-in" data-testid="upload-data-page">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Upload Data</h1>
-          <p className="text-sm text-muted-foreground mt-1">Import query data from Excel files</p>
+          <p className="text-sm text-muted-foreground mt-1">Manage cycles and import query data</p>
         </div>
         <div className="flex items-center gap-2">
           {queries.length > 0 && (
@@ -151,6 +167,51 @@ export default function UploadDataPage() {
           )}
         </div>
       </div>
+
+      {/* Step 1: Cycle Management */}
+      <Card className={!activeCycle ? 'ring-2 ring-blue-500/50' : ''}>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold">1</div>
+              <CardTitle className="text-sm font-semibold tracking-tight">Admission Cycle</CardTitle>
+              {!activeCycle && <Badge variant="destructive" className="text-[10px] ml-2">Required</Badge>}
+            </div>
+            {isAdmin && (
+              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setShowCreateCycle(true)} data-testid="inline-create-cycle-btn">
+                <Plus className="w-3 h-3 mr-1" />New Cycle
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="pt-0">
+          {cycles.length === 0 ? (
+            <div className="text-center py-4">
+              <CalendarDays className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">No cycles yet. Create one to start uploading data.</p>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-2">
+              {cycles.map(c => (
+                <button
+                  key={c.id}
+                  onClick={() => !c.isActive && isAdmin && handleSetActiveCycle(c.id)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all ${
+                    c.isActive
+                      ? 'bg-blue-50 border-blue-300 text-blue-800 dark:bg-blue-500/10 dark:border-blue-500/30 dark:text-blue-300 ring-1 ring-blue-400/30'
+                      : 'bg-card border-border text-muted-foreground hover:border-blue-200 hover:bg-blue-50/50 dark:hover:bg-blue-500/5 cursor-pointer'
+                  }`}
+                  data-testid={`cycle-chip-${c.id}`}
+                >
+                  <CalendarDays className="w-3.5 h-3.5" />
+                  <span className="font-medium text-xs">{c.name}</span>
+                  {c.isActive && <Badge className="text-[9px] bg-blue-500 text-white h-4 px-1.5">Active</Badge>}
+                </button>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Info cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
