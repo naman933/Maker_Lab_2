@@ -215,6 +215,16 @@ export default function Layout() {
               )}
 
               <button
+                onClick={() => setTourOpen(true)}
+                className="p-2 rounded-md hover:bg-muted transition-colors text-blue-500 hover:text-blue-600"
+                data-testid="help-tour-btn"
+                aria-label="App Guide / Tour"
+                title="App Guide"
+              >
+                <HelpCircle className="w-4 h-4" />
+              </button>
+
+              <button
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                 className="p-2 rounded-md hover:bg-muted transition-colors"
                 data-testid="theme-toggle-btn"
