@@ -2,25 +2,32 @@ import { useState, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useData } from '@/contexts/DataContext';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
 } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Upload, FileSpreadsheet, CheckCircle2, CalendarDays, User, Hash, Trash2 } from 'lucide-react';
+import { Upload, FileSpreadsheet, CheckCircle2, CalendarDays, User, Hash, Trash2, Plus, Settings2 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 export default function UploadDataPage() {
   const { user } = useAuth();
-  const { activeCycle, importQueries, uploads, queries, clearUploadedData, clearAllData } = useData();
+  const { activeCycle, importQueries, uploads, queries, clearUploadedData, clearAllData, cycles, addCycle, setActiveCycle } = useData();
+  const { isAdmin } = useAuth();
   const fileRef = useRef(null);
   const [dragOver, setDragOver] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [lastUpload, setLastUpload] = useState(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
-  const [clearType, setClearType] = useState('queries'); // 'queries' or 'all'
+  const [clearType, setClearType] = useState('queries');
+  const [showCreateCycle, setShowCreateCycle] = useState(false);
+  const [newCycle, setNewCycle] = useState({ name: '', startDate: '', endDate: '' });
 
   const latestUpload = uploads.length > 0 ? uploads[uploads.length - 1] : null;
 
