@@ -213,7 +213,11 @@ export default function UploadDataPage() {
         </CardContent>
       </Card>
 
-      {/* Info cards */}
+      {/* Step 2: Info cards */}
+      <div className="flex items-center gap-2 -mb-3">
+        <div className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold">2</div>
+        <span className="text-sm font-semibold tracking-tight">Upload & Status</span>
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
