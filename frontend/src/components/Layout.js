@@ -9,7 +9,7 @@ import {
   Upload, History, List, UserCheck, AlertTriangle, Archive,
   Clock, BarChart3, FileText, Users, Settings, ChevronDown,
   ChevronRight, LogOut, Sun, Moon, FileSpreadsheet, Menu, X,
-  CalendarDays, Folder, Briefcase, HelpCircle
+  CalendarDays, Briefcase, HelpCircle
 } from 'lucide-react';
 
 const navSections = [
@@ -28,12 +28,11 @@ const navSections = [
       { path: '/reports', label: 'Reports', icon: FileText, adminOnly: true },
     ],
   },
-  { label: 'Document Verification', icon: FileSpreadsheet, disabled: true },
+  { label: 'Document Verification', icon: FileSpreadsheet, path: '/document-verification' },
   { label: 'Interview Logistics', icon: Briefcase, disabled: true },
 ];
 
 const adminItems = [
-  { path: '/cycle-management', label: 'Cycle Management', icon: CalendarDays },
   { path: '/user-management', label: 'User Management', icon: Users },
 ];
 
@@ -121,6 +120,23 @@ export default function Layout() {
               </div>
             );
           }
+
+          // Standalone navigable item
+          if (section.path) {
+            const active = location.pathname === section.path;
+            return (
+              <button
+                key={section.label}
+                onClick={() => handleNav(section.path)}
+                className={`sidebar-nav-item w-full text-left mt-1 ${active ? 'active' : ''}`}
+                data-testid={`nav-${section.path.slice(1)}`}
+              >
+                <section.icon className="w-4 h-4 flex-shrink-0" />
+                <span className="text-xs truncate">{section.label}</span>
+              </button>
+            );
+          }
+
           return null;
         })}
 

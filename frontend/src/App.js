@@ -15,7 +15,7 @@ import SLAMonitorPage from "@/pages/SLAMonitorPage";
 import AnalyticsPage from "@/pages/AnalyticsPage";
 import ReportsPage from "@/pages/ReportsPage";
 import UserManagementPage from "@/pages/UserManagementPage";
-import CycleManagementPage from "@/pages/CycleManagementPage";
+import DocumentVerificationPage from "@/pages/DocumentVerificationPage";
 
 function ProtectedRoute({ children, adminOnly = false }) {
   const { user, isAdmin, loading } = useAuth();
@@ -41,10 +41,10 @@ function AppRoutes() {
         <Route path="escalation-queue" element={<EscalationQueuePage />} />
         <Route path="escalation-repository" element={<EscalationRepositoryPage />} />
         <Route path="sla-monitor" element={<SLAMonitorPage />} />
+        <Route path="document-verification" element={<DocumentVerificationPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />
         <Route path="reports" element={<ProtectedRoute adminOnly><ReportsPage /></ProtectedRoute>} />
         <Route path="user-management" element={<ProtectedRoute adminOnly><UserManagementPage /></ProtectedRoute>} />
-        <Route path="cycle-management" element={<ProtectedRoute adminOnly><CycleManagementPage /></ProtectedRoute>} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

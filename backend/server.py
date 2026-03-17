@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, UploadFile, File
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 import os
@@ -7,6 +7,7 @@ import json
 import httpx
 from pathlib import Path
 from pydantic import BaseModel
+from typing import List
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -70,6 +71,30 @@ Candidate Query: {req.description}'''
     except Exception as e:
         logging.error(f"Groq API error: {e}")
         return {"error": str(e)}
+
+# --- Document Verification Endpoint ---
+from docverify import parse_formdata, parse_pdfs_parallel, match_and_verify
+
+@api_router.post("/docverify/verify")
+async def verify_documents(
+    formdata_file: UploadFile = File(...),
+    pdf_files: List[UploadFile] = File(...)
+):
+    form_bytes = await formdata_file.read()
+    form_name = formdata_file.filename or 'data.csv'
+    candidates = parse_formdata(form_bytes, form_name)
+
+    if not candidates:
+        return {"detail": "No valid candidates found in the uploaded file"}
+
+    pdfs = []
+    for pf in pdf_files:
+        pdf_bytes = await pf.read()
+        pdfs.append({'bytes': pdf_bytes, 'filename': pf.filename or 'unknown.pdf'})
+
+    scorecards = parse_pdfs_parallel(pdfs)
+    results = match_and_verify(candidates, scorecards)
+    return results
 
 app.include_router(api_router)
 
