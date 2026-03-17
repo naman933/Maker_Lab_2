@@ -7,12 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { UserPlus, Pencil, Trash2 } from 'lucide-react';
 
 export default function UserManagementPage() {
-  const { users, addUser, updateUser, deleteUser } = useData();
+  const { users, queries, addUser, updateUser, deleteUser, redistributeQueries } = useData();
   const { user: currentUser } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -96,12 +97,38 @@ export default function UserManagementPage() {
     }
   };
 
+  const handleToggleAvailability = async (u) => {
+    const newAvailable = !u.isAvailable;
+    try {
+      await updateUser(u.id, { isAvailable: newAvailable });
+      if (!newAvailable) {
+        // Redistribute open queries from this member
+        const openCount = queries.filter(
+          q => q.assignedTo === u.username && q.internalStatus !== 'Resolved' && q.internalStatus !== 'Spam'
+        ).length;
+        if (openCount > 0) {
+          const moved = redistributeQueries(u.username);
+          toast.success(`${u.name} marked unavailable. ${moved} queries redistributed.`);
+        } else {
+          toast.success(`${u.name} marked unavailable`);
+        }
+      } else {
+        toast.success(`${u.name} marked available`);
+      }
+    } catch (err) {
+      toast.error(err.message || 'Failed to update availability');
+    }
+  };
+
+  const getOpenQueryCount = (username) =>
+    queries.filter(q => q.assignedTo === username && q.internalStatus !== 'Resolved' && q.internalStatus !== 'Spam').length;
+
   return (
     <div className="space-y-6" data-testid="user-management-page">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold" data-testid="page-title">User Management</h2>
-          <p className="text-sm text-muted-foreground mt-1">Manage system users and access levels</p>
+          <p className="text-sm text-muted-foreground mt-1">Manage system users, access levels, and assignment availability</p>
         </div>
         <Button onClick={openCreate} data-testid="add-user-btn">
           <UserPlus className="w-4 h-4 mr-2" /> Add User
@@ -116,26 +143,53 @@ export default function UserManagementPage() {
               <TableHead>Username</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Role</TableHead>
+              <TableHead className="text-center">Open Queries</TableHead>
+              <TableHead className="text-center">Available</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {users.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                   No users found. Create your first user.
                 </TableCell>
               </TableRow>
             ) : (
               users.map(u => (
-                <TableRow key={u.id} data-testid={`user-row-${u.username}`}>
-                  <TableCell className="font-medium">{u.name}</TableCell>
+                <TableRow key={u.id} className={u.role === 'AdCom Member' && !u.isAvailable ? 'opacity-60' : ''} data-testid={`user-row-${u.username}`}>
+                  <TableCell className="font-medium">
+                    {u.name}
+                    {u.role === 'AdCom Member' && !u.isAvailable && (
+                      <Badge variant="outline" className="ml-2 text-[10px] text-amber-600 border-amber-300">Unavailable</Badge>
+                    )}
+                  </TableCell>
                   <TableCell className="font-mono text-sm">{u.username}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{u.email || '-'}</TableCell>
                   <TableCell>
                     <Badge variant={u.role === 'Admin' ? 'default' : 'secondary'} data-testid={`role-badge-${u.username}`}>
                       {u.role}
                     </Badge>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {u.role === 'AdCom Member' ? (
+                      <span className="text-sm font-mono" data-testid={`query-count-${u.username}`}>
+                        {getOpenQueryCount(u.username)}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground text-xs">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {u.role === 'AdCom Member' ? (
+                      <Switch
+                        checked={u.isAvailable !== false}
+                        onCheckedChange={() => handleToggleAvailability(u)}
+                        data-testid={`toggle-available-${u.username}`}
+                      />
+                    ) : (
+                      <span className="text-muted-foreground text-xs">-</span>
+                    )}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">

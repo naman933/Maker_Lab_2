@@ -44,10 +44,14 @@ export function DataProvider({ children }) {
     bump();
   };
 
-  const importQueries = (newQueries, fileName, uploadedBy) => {
+  const importQueries = (newQueries, fileName, uploadedBy, assignmentPool = null) => {
     const existing = storage.getQueries();
     const existingIds = new Set(existing.map(q => q.ticketId));
-    const members = users.filter(u => u.role === 'AdCom Member');
+
+    // Use provided pool or fall back to all available AdCom Members
+    const pool = assignmentPool
+      ? assignmentPool
+      : users.filter(u => u.role === 'AdCom Member' && u.isAvailable !== false);
 
     let imported = 0;
     const toAdd = [];
@@ -56,9 +60,9 @@ export function DataProvider({ children }) {
       if (!q.ticketId || existingIds.has(q.ticketId)) return;
 
       let assignedTo = '';
-      if (members.length > 0) {
+      if (pool.length > 0) {
         const counts = {};
-        members.forEach(m => { counts[m.username] = 0; });
+        pool.forEach(m => { counts[m.username] = 0; });
         [...existing, ...toAdd].forEach(eq => {
           if (eq.assignedTo && counts[eq.assignedTo] !== undefined &&
               eq.internalStatus !== 'Resolved' && eq.internalStatus !== 'Spam') {
@@ -186,6 +190,52 @@ export function DataProvider({ children }) {
     bump();
   };
 
+  const redistributeQueries = (excludedUsername) => {
+    const all = storage.getQueries();
+    const availableMembers = users.filter(
+      u => u.role === 'AdCom Member' && u.isAvailable !== false && u.username !== excludedUsername
+    );
+
+    if (availableMembers.length === 0) {
+      return 0; // No one to redistribute to
+    }
+
+    let redistributed = 0;
+    const updated = all.map(q => {
+      if (q.assignedTo === excludedUsername &&
+          q.internalStatus !== 'Resolved' && q.internalStatus !== 'Spam') {
+        // Round-robin based on current counts
+        const counts = {};
+        availableMembers.forEach(m => { counts[m.username] = 0; });
+        all.forEach(eq => {
+          if (eq.assignedTo && counts[eq.assignedTo] !== undefined &&
+              eq.internalStatus !== 'Resolved' && eq.internalStatus !== 'Spam' &&
+              eq.ticketId !== q.ticketId) {
+            counts[eq.assignedTo]++;
+          }
+        });
+        const sorted = Object.entries(counts).sort((a, b) => a[1] - b[1]);
+        const newAssignee = sorted[0]?.[0] || '';
+        if (newAssignee) {
+          redistributed++;
+          return {
+            ...q,
+            assignedTo: newAssignee,
+            reassignmentHistory: [
+              ...(q.reassignmentHistory || []),
+              { from: excludedUsername, to: newAssignee, date: new Date().toISOString(), reason: 'Member unavailable' }
+            ],
+          };
+        }
+      }
+      return q;
+    });
+
+    storage.setQueries(updated);
+    bump();
+    return redistributed;
+  };
+
   const clearAllData = () => {
     storage.setQueries([]);
     storage.setUploads([]);
@@ -198,7 +248,7 @@ export function DataProvider({ children }) {
       queries, cycles, uploads, users, activeCycle, ver,
       addCycle, setActiveCycle,
       importQueries, updateQuery,
-      addUser, updateUser, deleteUser, fetchUsers, bump,
+      addUser, updateUser, deleteUser, fetchUsers, redistributeQueries, bump,
       clearUploadedData, clearAllData,
     }}>
       {children}

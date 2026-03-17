@@ -18,6 +18,7 @@ class User(Base):
     email = Column(String(255), default='')
     role = Column(String(50), nullable=False, default='AdCom Member')
     is_admin_access = Column(Boolean, default=False)
+    is_available = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     def to_dict(self):
@@ -28,6 +29,7 @@ class User(Base):
             'email': self.email or '',
             'role': self.role,
             'isAdminAccess': self.is_admin_access,
+            'isAvailable': self.is_available if self.is_available is not None else True,
         }
 
 

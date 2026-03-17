@@ -13,12 +13,13 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Upload, FileSpreadsheet, CheckCircle2, CalendarDays, User, Hash, Trash2, Plus, Settings2 } from 'lucide-react';
+import { Upload, FileSpreadsheet, CheckCircle2, CalendarDays, User, Hash, Trash2, Plus, Settings2, Users } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import * as XLSX from 'xlsx';
 
 export default function UploadDataPage() {
   const { user } = useAuth();
-  const { activeCycle, importQueries, uploads, queries, clearUploadedData, clearAllData, cycles, addCycle, setActiveCycle } = useData();
+  const { activeCycle, importQueries, uploads, queries, users, clearUploadedData, clearAllData, cycles, addCycle, setActiveCycle } = useData();
   const { isAdmin } = useAuth();
   const fileRef = useRef(null);
   const [dragOver, setDragOver] = useState(false);
@@ -28,6 +29,20 @@ export default function UploadDataPage() {
   const [clearType, setClearType] = useState('queries');
   const [showCreateCycle, setShowCreateCycle] = useState(false);
   const [newCycle, setNewCycle] = useState({ name: '', startDate: '', endDate: '' });
+  const [showPoolConfig, setShowPoolConfig] = useState(false);
+
+  // Assignment pool: members selected for query assignment
+  const adcomMembers = users.filter(u => u.role === 'AdCom Member');
+  const [poolOverrides, setPoolOverrides] = useState(null); // null = use defaults
+
+  const getAssignmentPool = () => {
+    if (poolOverrides) {
+      return adcomMembers.filter(m => poolOverrides.includes(m.username));
+    }
+    return adcomMembers.filter(m => m.isAvailable !== false);
+  };
+
+  const assignmentPool = getAssignmentPool();
 
   const latestUpload = uploads.length > 0 ? uploads[uploads.length - 1] : null;
 
@@ -92,7 +107,7 @@ export default function UploadDataPage() {
         setUploading(false);
         return;
       }
-      const imported = importQueries(records, file.name, user.username);
+      const imported = importQueries(records, file.name, user.username, assignmentPool);
       setLastUpload({ fileName: file.name, imported, dateTime: new Date().toISOString() });
       toast.success(`Successfully imported ${imported} records`);
     } catch (err) {
@@ -270,6 +285,93 @@ export default function UploadDataPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Step 3: Assignment Pool */}
+      {isAdmin && adcomMembers.length > 0 && (
+        <Card data-testid="assignment-pool-card">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold">3</div>
+                <CardTitle className="text-sm font-semibold tracking-tight">Assignment Pool</CardTitle>
+                <Badge variant="secondary" className="text-[10px] ml-1">{assignmentPool.length} of {adcomMembers.length} active</Badge>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => {
+                  if (!poolOverrides) {
+                    setPoolOverrides(adcomMembers.filter(m => m.isAvailable !== false).map(m => m.username));
+                  }
+                  setShowPoolConfig(!showPoolConfig);
+                }}
+                data-testid="configure-pool-btn"
+              >
+                <Settings2 className="w-3 h-3 mr-1" />{showPoolConfig ? 'Close' : 'Override'}
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-0">
+            {/* Default pool display */}
+            <div className="flex flex-wrap gap-2">
+              {assignmentPool.map(m => (
+                <div key={m.username} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20" data-testid={`pool-member-${m.username}`}>
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                  <span className="text-xs font-medium">{m.name}</span>
+                </div>
+              ))}
+              {adcomMembers.filter(m => !assignmentPool.find(p => p.username === m.username)).map(m => (
+                <div key={m.username} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted border border-border opacity-50">
+                  <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
+                  <span className="text-xs font-medium">{m.name}</span>
+                  <span className="text-[10px] text-muted-foreground">(excluded)</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Override selector */}
+            {showPoolConfig && poolOverrides && (
+              <div className="mt-3 p-3 rounded-lg border border-dashed border-blue-300 dark:border-blue-500/30 bg-blue-50/50 dark:bg-blue-500/5 space-y-2" data-testid="pool-override-panel">
+                <p className="text-xs text-muted-foreground font-medium">Override for this upload (does not change permanent availability):</p>
+                {adcomMembers.map(m => (
+                  <label key={m.username} className="flex items-center gap-2 cursor-pointer" data-testid={`pool-checkbox-${m.username}`}>
+                    <Checkbox
+                      checked={poolOverrides.includes(m.username)}
+                      onCheckedChange={(checked) => {
+                        setPoolOverrides(prev =>
+                          checked ? [...prev, m.username] : prev.filter(u => u !== m.username)
+                        );
+                      }}
+                    />
+                    <span className="text-sm">{m.name}</span>
+                    <span className="text-xs text-muted-foreground">({m.username})</span>
+                    {m.isAvailable === false && (
+                      <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-300">Normally unavailable</Badge>
+                    )}
+                  </label>
+                ))}
+                <div className="flex gap-2 pt-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 text-[11px]"
+                    onClick={() => setPoolOverrides(adcomMembers.map(m => m.username))}
+                    data-testid="select-all-pool"
+                  >Select All</Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 text-[11px]"
+                    onClick={() => { setPoolOverrides(null); setShowPoolConfig(false); }}
+                    data-testid="reset-pool-btn"
+                  >Reset to Default</Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Upload zone */}
       <Card>

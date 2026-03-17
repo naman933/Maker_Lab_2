@@ -35,12 +35,14 @@ class CreateUserRequest(BaseModel):
     email: Optional[str] = ''
     role: Optional[str] = 'AdCom Member'
     isAdminAccess: Optional[bool] = False
+    isAvailable: Optional[bool] = True
 
 class UpdateUserRequest(BaseModel):
     name: Optional[str] = None
     email: Optional[str] = None
     role: Optional[str] = None
     isAdminAccess: Optional[bool] = None
+    isAvailable: Optional[bool] = None
     password: Optional[str] = None
 
 
@@ -105,6 +107,7 @@ async def create_user(req: CreateUserRequest, db: AsyncSession = Depends(get_db)
         email=req.email or '',
         role=req.role or 'AdCom Member',
         is_admin_access=req.isAdminAccess or False,
+        is_available=req.isAvailable if req.isAvailable is not None else True,
     )
     db.add(user)
     await db.commit()
@@ -126,6 +129,8 @@ async def update_user(user_id: str, req: UpdateUserRequest, db: AsyncSession = D
         user.role = req.role
     if req.isAdminAccess is not None:
         user.is_admin_access = req.isAdminAccess
+    if req.isAvailable is not None:
+        user.is_available = req.isAvailable
     if req.password:
         user.password_hash = hash_password(req.password)
 
