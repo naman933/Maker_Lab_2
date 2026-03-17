@@ -47,18 +47,32 @@ def normalize_date(date_str):
     if not date_str:
         return None
     s = str(date_str).strip()
+    # Remove ordinal suffixes (1st, 2nd, 3rd, 4th, etc.)
+    s_clean = re.sub(r'(\d+)(st|nd|rd|th)\b', r'\1', s, flags=re.IGNORECASE)
     for fmt in ['%d/%m/%Y', '%Y-%m-%d', '%d-%m-%Y', '%m/%d/%Y', '%B %d, %Y', '%b %d, %Y',
-                '%d %B %Y', '%d %b %Y', '%A, %B %d, %Y', '%A, %d %B %Y']:
-        try:
-            return datetime.strptime(s, fmt).strftime('%Y-%m-%d')
-        except ValueError:
-            continue
-    cleaned = re.sub(r'(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s*', '', s, flags=re.IGNORECASE).strip()
-    for fmt in ['%B %d, %Y', '%d %B %Y', '%b %d, %Y', '%d %b %Y', '%d/%m/%Y']:
-        try:
-            return datetime.strptime(cleaned, fmt).strftime('%Y-%m-%d')
-        except ValueError:
-            continue
+                '%d %B %Y', '%d %b %Y', '%A, %B %d, %Y', '%A, %d %B %Y',
+                '%d %b %Y', '%b %d %Y']:
+        for candidate_str in [s_clean, s]:
+            cleaned = re.sub(r'(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s*', '', candidate_str, flags=re.IGNORECASE).strip()
+            try:
+                return datetime.strptime(cleaned, fmt).strftime('%Y-%m-%d')
+            except ValueError:
+                continue
+    return s
+
+
+def normalize_numeric_string(val):
+    """Strip trailing .0 from numeric strings (e.g. '21161013.0' -> '21161013')"""
+    s = str(val).strip()
+    if re.match(r'^\d+\.0$', s):
+        return s[:-2]
+    # Handle scientific notation like 2.1161013E7
+    try:
+        f = float(s)
+        if f == int(f) and ('e' in s.lower() or 'E' in s):
+            return str(int(f))
+    except (ValueError, OverflowError):
+        pass
     return s
 
 
@@ -86,6 +100,11 @@ def parse_formdata(file_bytes, filename):
             if field:
                 candidate[field] = raw_val.strip() if raw_val else ''
         if candidate.get('name') or candidate.get('cat_reg_no'):
+            # Normalize numeric fields
+            if candidate.get('cat_reg_no'):
+                candidate['cat_reg_no'] = normalize_numeric_string(candidate['cat_reg_no'])
+            if candidate.get('application_id'):
+                candidate['application_id'] = normalize_numeric_string(candidate.get('application_id', ''))
             for pf in ['varc_percentile', 'dilr_percentile', 'qa_percentile', 'overall_percentile']:
                 if pf in candidate:
                     candidate[pf] = parse_number(candidate[pf])
@@ -141,8 +160,9 @@ def parse_single_pdf(pdf_bytes, filename):
 
         # Extract candidate name
         name_patterns = [
-            r'(?:Candidate|Student|Applicant)\s*(?:Name|\'s Name)\s*[:=\-]?\s*([A-Z][A-Za-z\s.]+)',
-            r'Name\s*[:=\-]?\s*([A-Z][A-Za-z\s.]{3,40})',
+            r'Name\s*of\s*(?:the\s*)?Candidate\s*[:=\-]?\s*([A-Z][A-Za-z\s.]+?)(?:\n|$)',
+            r'(?:Candidate|Student|Applicant)\s*(?:Name|\'s Name)\s*[:=\-]?\s*([A-Z][A-Za-z\s.]+?)(?:\n|$)',
+            r'Name\s*[:=\-]?\s*([A-Z][A-Za-z\s.]{3,40}?)(?:\n|$)',
         ]
         for pat in name_patterns:
             m = re.search(pat, all_text)
@@ -162,10 +182,26 @@ def parse_single_pdf(pdf_bytes, filename):
                 result['date_of_test'] = normalize_date(m.group(1).strip())
                 break
 
-        # Extract percentiles from tables first
+        # Extract percentiles from tables
+        # CAT scorecards typically have a table structure like:
+        # Row 0: Section headers (Verbal Ability, Data Interpretation, Quantitative, Total)
+        # Row 1: Sub-headers (may repeat section names)
+        # Row 2: Column labels (Scaled Score, Percentile, ...)
+        # Row 3: Values (31.75, 93.21, 25.79, 96.20, 15.08, 86.70, 72.62, 95.10)
+
+        def normalize_cell(cell):
+            """Remove extra spaces within words (OCR artifact: 'Percent ile' -> 'Percentile')"""
+            return re.sub(r'\s+', ' ', str(cell or '')).strip().lower()
+
+        def contains_percentile(cell_str):
+            """Check if cell contains 'percentile' even with OCR spaces"""
+            cleaned = re.sub(r'\s+', '', cell_str.lower())
+            return 'percentile' in cleaned and 'scaledscore' not in cleaned
+
         section_map = {
             'varc': 'varc_percentile',
             'verbal': 'varc_percentile',
+            'reading comprehension': 'varc_percentile',
             'dilr': 'dilr_percentile',
             'data interpretation': 'dilr_percentile',
             'logical reasoning': 'dilr_percentile',
@@ -173,15 +209,93 @@ def parse_single_pdf(pdf_bytes, filename):
             'quantitative': 'qa_percentile',
             'overall': 'overall_percentile',
             'aggregate': 'overall_percentile',
+            'total': 'overall_percentile',
         }
 
+        def match_section(cell_str):
+            """Match cell text to a section field, handling OCR spaces"""
+            cleaned = re.sub(r'\s+', '', cell_str).lower()
+            for keyword, field in section_map.items():
+                kw_clean = keyword.replace(' ', '')
+                if kw_clean in cleaned:
+                    return field
+            return None
+
         for table in all_tables:
+            if len(table) < 2:
+                continue
+
+            # Skip layout tables (single-cell rows with long text = containers, not data)
+            max_cols = max(len(row) for row in table) if table else 0
+            if max_cols < 2:
+                continue
+
+            # Strategy 1: Columnar layout — map section header columns to percentile values
+            percentile_col_indices = []
+            label_row_idx = None
+            for ri, row in enumerate(table):
+                for ci, cell in enumerate(row):
+                    cell_str = normalize_cell(cell)
+                    if contains_percentile(cell_str):
+                        percentile_col_indices.append(ci)
+                        label_row_idx = ri
+
+            if percentile_col_indices and label_row_idx is not None:
+                # Find the data row (row after label row with numeric values)
+                data_row = None
+                for ri in range(label_row_idx + 1, len(table)):
+                    nums = [parse_number(c) for c in table[ri] if parse_number(c) is not None]
+                    if len(nums) >= 3:
+                        data_row = table[ri]
+                        break
+
+                if data_row:
+                    # Map section headers from earlier rows to column positions
+                    col_to_section = {}
+                    for ri in range(label_row_idx):
+                        row = table[ri]
+                        for ci, cell in enumerate(row):
+                            cell_str = normalize_cell(cell)
+                            if not cell_str:
+                                continue
+                            field = match_section(cell_str)
+                            if field:
+                                col_to_section[ci] = field
+
+                    # Also check the label row itself for "Overall" in "Overall Percentile"
+                    for ci, cell in enumerate(table[label_row_idx]):
+                        cell_str = normalize_cell(cell)
+                        field = match_section(cell_str)
+                        if field and ci not in col_to_section:
+                            col_to_section[ci] = field
+
+                    # Extract percentile values from data row using column mapping
+                    for pci in sorted(percentile_col_indices):
+                        if pci < len(data_row):
+                            val = parse_number(data_row[pci])
+                            if val is not None and 0 <= val <= 100:
+                                # Find which section this column belongs to
+                                matched_field = None
+                                # Check if this column itself has a section mapping
+                                if pci in col_to_section:
+                                    matched_field = col_to_section[pci]
+                                else:
+                                    # Find nearest section to the left
+                                    for ci in sorted(col_to_section.keys(), reverse=True):
+                                        if ci <= pci:
+                                            matched_field = col_to_section[ci]
+                                            break
+                                if matched_field and result[matched_field] is None:
+                                    result[matched_field] = val
+
+                    continue  # Skip strategy 2 for this table
+
+            # Strategy 2: Row-based layout (original logic)
             header_row = table[0] if table else []
             percentile_col_idx = None
-
             if header_row:
                 for idx, cell in enumerate(header_row):
-                    if cell and 'percentile' in str(cell).lower():
+                    if cell and contains_percentile(normalize_cell(cell)):
                         percentile_col_idx = idx
                         break
 
@@ -254,13 +368,13 @@ def match_and_verify(candidates, scorecards):
     matched_pdfs = set()
 
     for cand in candidates:
-        cand_reg = (cand.get('cat_reg_no') or '').strip().upper()
+        cand_reg = normalize_numeric_string((cand.get('cat_reg_no') or '').strip()).upper()
         best_match = None
         match_method = None
 
         # Primary: match by CAT Registration Number
         for sc in scorecards:
-            sc_reg = (sc.get('cat_reg_no') or '').strip().upper()
+            sc_reg = normalize_numeric_string((sc.get('cat_reg_no') or '').strip()).upper()
             if cand_reg and sc_reg and cand_reg == sc_reg:
                 best_match = sc
                 match_method = 'cat_reg_no'

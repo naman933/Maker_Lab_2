@@ -51,6 +51,11 @@ Build a full-stack web application named "Admissions Query Intelligence System (
   - Backend: PDF parsing with pdfplumber, CSV/Excel parsing, matching by CAT reg no or name
   - Frontend: File upload UI, verification results table with summary, export CSV/JSON, search/filter
   - Sidebar navigation link working
+  - Bug fix: Numeric string normalization (21161013.0 → 21161013) for reg no matching
+  - Bug fix: OCR-safe percentile column detection (handles "Percent ile", "Perc entile" etc.)
+  - Bug fix: Layout table filtering (skip single-cell container tables)
+  - Bug fix: Name pattern "Name of the Candidate" for CAT scorecards
+  - Bug fix: Date normalization handles ordinal suffixes ("28th Nov 2021")
 - [x] Refactoring: Removed obsolete CycleManagementPage (merged into UploadDataPage)
 - [x] Fixed React key warning in DocumentVerificationPage
 - [x] Fixed accessibility: Added DialogTitle to GuidedTour
