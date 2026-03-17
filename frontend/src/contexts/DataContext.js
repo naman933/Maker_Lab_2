@@ -1,18 +1,36 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import * as storage from '../services/storage';
 import { calculatePriority } from '../services/priorityEngine';
 
+const API = process.env.REACT_APP_BACKEND_URL || '';
 const DataContext = createContext(null);
 
 export function DataProvider({ children }) {
   const [ver, setVer] = useState(0);
+  const [users, setUsersState] = useState([]);
   const bump = useCallback(() => setVer(v => v + 1), []);
 
   const queries = storage.getQueries();
   const cycles = storage.getCycles();
   const uploads = storage.getUploads();
-  const users = storage.getUsers();
   const activeCycle = cycles.find(c => c.isActive) || null;
+
+  // Fetch users from backend
+  const fetchUsers = useCallback(async () => {
+    try {
+      const resp = await fetch(`${API}/api/users`);
+      if (resp.ok) {
+        const data = await resp.json();
+        setUsersState(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch users:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers, ver]);
 
   const addCycle = (cycle) => {
     const updated = [...cycles, { ...cycle, id: Date.now().toString(), isActive: false }];
@@ -113,16 +131,53 @@ export function DataProvider({ children }) {
     }
   };
 
-  const addUser = (user) => {
-    const updated = [...users, { ...user, id: Date.now().toString() }];
-    storage.setUsers(updated);
-    bump();
+  const addUser = async (user) => {
+    try {
+      const resp = await fetch(`${API}/api/users`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(user),
+      });
+      if (!resp.ok) {
+        const err = await resp.json();
+        throw new Error(err.detail || 'Failed to create user');
+      }
+      bump();
+      return await resp.json();
+    } catch (err) {
+      throw err;
+    }
   };
 
-  const updateUser = (id, updates) => {
-    const updated = users.map(u => u.id === id ? { ...u, ...updates } : u);
-    storage.setUsers(updated);
-    bump();
+  const updateUser = async (id, updates) => {
+    try {
+      const resp = await fetch(`${API}/api/users/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+      if (!resp.ok) {
+        const err = await resp.json();
+        throw new Error(err.detail || 'Failed to update user');
+      }
+      bump();
+      return await resp.json();
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  const deleteUser = async (id) => {
+    try {
+      const resp = await fetch(`${API}/api/users/${id}`, { method: 'DELETE' });
+      if (!resp.ok) {
+        const err = await resp.json();
+        throw new Error(err.detail || 'Failed to delete user');
+      }
+      bump();
+    } catch (err) {
+      throw err;
+    }
   };
 
   const clearUploadedData = () => {
@@ -143,7 +198,7 @@ export function DataProvider({ children }) {
       queries, cycles, uploads, users, activeCycle, ver,
       addCycle, setActiveCycle,
       importQueries, updateQuery,
-      addUser, updateUser, bump,
+      addUser, updateUser, deleteUser, fetchUsers, bump,
       clearUploadedData, clearAllData,
     }}>
       {children}

@@ -96,7 +96,12 @@ async def verify_documents(
     results = match_and_verify(candidates, scorecards)
     return results
 
+# --- Auth & User Management ---
+from auth import auth_router, users_router
+
 app.include_router(api_router)
+app.include_router(auth_router)
+app.include_router(users_router)
 
 app.add_middleware(
     CORSMiddleware,

@@ -1,5 +1,8 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import * as storage from '../services/storage';
+
+const API = process.env.REACT_APP_BACKEND_URL || '';
+const TOKEN_KEY = 'aqis_token';
+const USER_KEY = 'aqis_session';
 
 const AuthContext = createContext(null);
 
@@ -8,48 +11,61 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    storage.initStorage();
-    const session = storage.getSession();
-    if (session) {
-      const users = storage.getUsers();
-      const currentUser = users.find(u => u.id === session.id);
-      if (currentUser) {
-        const { password, ...safe } = currentUser;
-        setUser(safe);
-      } else {
-        setUser(session);
+    // Restore session from localStorage
+    const savedUser = localStorage.getItem(USER_KEY);
+    const savedToken = localStorage.getItem(TOKEN_KEY);
+    if (savedUser && savedToken) {
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch {
+        localStorage.removeItem(USER_KEY);
+        localStorage.removeItem(TOKEN_KEY);
       }
     }
     setLoading(false);
   }, []);
 
-  const login = (username, password) => {
-    const found = storage.authenticate(username, password);
-    if (found) {
-      const { password: pw, ...safe } = found;
-      storage.setSession(safe);
-      setUser(safe);
+  const login = async (username, password) => {
+    try {
+      const resp = await fetch(`${API}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await resp.json();
+
+      if (!resp.ok || !data.success) {
+        return { success: false, error: data.detail || 'Invalid username or password' };
+      }
+
+      localStorage.setItem(TOKEN_KEY, data.token);
+      localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+      setUser(data.user);
       return { success: true };
+    } catch (err) {
+      return { success: false, error: 'Connection error. Please try again.' };
     }
-    return { success: false, error: 'Invalid username or password' };
   };
 
   const logout = () => {
-    storage.clearSession();
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
     setUser(null);
   };
 
-  const refreshUser = () => {
-    const session = storage.getSession();
-    if (session) {
-      const users = storage.getUsers();
-      const currentUser = users.find(u => u.id === session.id);
-      if (currentUser) {
-        const { password, ...safe } = currentUser;
-        storage.setSession(safe);
-        setUser(safe);
+  const refreshUser = async () => {
+    if (!user?.id) return;
+    try {
+      const resp = await fetch(`${API}/api/users`);
+      if (resp.ok) {
+        const users = await resp.json();
+        const current = users.find(u => u.id === user.id);
+        if (current) {
+          localStorage.setItem(USER_KEY, JSON.stringify(current));
+          setUser(current);
+        }
       }
-    }
+    } catch {}
   };
 
   const isAdmin = user?.role === 'Admin' || user?.isAdminAccess === true;

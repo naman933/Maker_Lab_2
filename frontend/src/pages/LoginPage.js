@@ -15,19 +15,22 @@ export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-    setTimeout(() => {
-      const result = login(username, password);
+    try {
+      const result = await login(username, password);
       if (result.success) {
         navigate('/upload');
       } else {
         setError(result.error);
       }
+    } catch {
+      setError('Connection error. Please try again.');
+    } finally {
       setLoading(false);
-    }, 300);
+    }
   };
 
   return (
