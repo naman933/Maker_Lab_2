@@ -132,6 +132,7 @@ export default function UploadDataPage() {
     }
     setLastUpload(null);
     setShowClearConfirm(false);
+    window.location.reload();
   };
 
   const handleCreateCycle = () => {
